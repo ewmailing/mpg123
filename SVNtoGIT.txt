@@ -1,0 +1,14 @@
+To pull (update) from the official SVN repo, 
+add the following block to your .git/config
+
+[svn-remote "svn"]
+        url = svn://scm.orgis.org/mpg123
+        fetch = trunk:refs/remotes/origin/trunk
+        branches = branches/*:refs/remotes/origin/*
+        tags = tags/*:refs/remotes/origin/tags/*
+
+
+Then run:
+git svn fetch
+
+
