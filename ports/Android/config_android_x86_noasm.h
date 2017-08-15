@@ -3,7 +3,9 @@
 
 /* Define if your architecture wants/needs/can use attribute_align_arg and
    alignment checks. It is for 32bit x86... */
-/* #undef ABI_ALIGN_FUN */
+#define ABI_ALIGN_FUN 1
+
+#define OPT_GENERIC 1
 
 /* Define to use proper rounding. */
 /* #undef ACCURATE_ROUNDING */
@@ -12,19 +14,7 @@
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
 /* Define if .balign is present. */
-#define ASMALIGN_BALIGN 1
-
-
-#define HAVE_DIRENT_H 1
-#define OPT_X86_64 1
-//#define NO_REAL 1
-
-#define ACCURATE_ROUNDING 1
-#define REAL_IS_FLOAT 1
-//#define NO_32BIT
-#define HAVE_STRERROR 1
-
-
+//#define ASMALIGN_BALIGN 1
 
 /* Define if .align just takes byte count. */
 /* #undef ASMALIGN_BYTE */
@@ -274,7 +264,7 @@
 
 /* Define this to the size of long type in bits, used for LFS small/native
    alias functions. */
-#define LFS_ALIAS_BITS 64
+#define LFS_ALIAS_BITS 32
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */

@@ -196,7 +196,17 @@ ENDIF()
 
 # GOTCHA: CFLAGS don't get passed to the ASM files. We need to use DEFINTIONS instead.
 
-SET(MPGLIB123_CFLAGS_FOR_ARMV5 "-Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -ffast-math -O3")
+
+SET(MPGLIB123_CFLAGS_FOR_PURE_C_FALLBACK "-Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -ffast-math -O3")
+SET(MPGLIB123_DEFINITIONS_FOR_PURE_C_FALLBACK "-DACCURATE_ROUNDING -DOPT_GENERIC")
+SET(MPG123_PURE_C_FALLBACK_SOURCE_FILES
+	${CMAKE_SOURCE_DIR}/src/libmpg123/synth.c
+	${CMAKE_SOURCE_DIR}/src/libmpg123/synth_real.c
+	${CMAKE_SOURCE_DIR}/src/libmpg123/synth_s32.c
+#	${CMAKE_SOURCE_DIR}/src/libmpg123/synth_8bit.c
+)
+
+SET(MPGLIB123_CFLAGS_FOR_ARMV5 "-mcpu=cortex-m3 -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -ffast-math -O3")
 SET(MPGLIB123_DEFINITIONS_FOR_ARMV5 "-DACCURATE_ROUNDING -DOPT_ARM -DREAL_IS_FIXED -DNO_REAL -DNO_32BIT -DHAVE_STRERROR -DASMALIGN_BYTE")
 SET(MPG123_ARMV5_SOURCE_FILES
 	${CMAKE_SOURCE_DIR}/src/libmpg123/synth_arm.S
@@ -222,8 +232,12 @@ SET(MPG123_ARMV7_SOURCE_FILES
 #LOCAL_SRC_FILES +=  synth_neon.S synth_neon_accurate.S synth_neon_float.S synth_neon_s32.S
 #LOCAL_SRC_FILES +=  dct36_neon.S dct64_neon_float.S synth_stereo_neon_accurate.S synth_stereo_neon_float.S synth_stereo_neon_s32.S
 
-
-SET(M0PGLIB123_CFLAGS_FOR_X86 "-Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -ffast-math -O3")
+#   /Library/Frameworks/Android/android-sdk/ndk-bundle/toolchains/x86-4.9/prebuilt/darwin-x86_64/lib/gcc/i686-linux-android/4.9.x/../../../../i686-linux-android/bin/ld: warning: shared library text segment is not shareable
+#    /Library/Frameworks/Android/android-sdk/ndk-bundle/toolchains/x86-4.9/prebuilt/darwin-x86_64/lib/gcc/i686-linux-android/4.9.x/../../../../i686-linux-android/bin/ld: error: treating warnings as errors
+#    clang: error: linker command failed with exit code 1 (use -v to see invocation)
+# Update: Pushing on with this error results in a Error: dlopen failed [because] libmpg123.so has text relocations
+# It appears Android 6.0/Marshmellow/API 23 rejects text relocations so we can't use this.
+SET(MPGLIB123_CFLAGS_FOR_X86 "-Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -ffast-math -O3 -fPIC")
 SET(MPGLIB123_DEFINITIONS_FOR_X86 "-DACCURATE_ROUNDING -DHAVE_STRERROR -DOPT_SSE=1 -DPIC -D__ELF__")
 SET(MPG123_X86_SOURCE_FILES
 	${CMAKE_SOURCE_DIR}/src/libmpg123/synth_real.c
@@ -240,7 +254,6 @@ SET(MPG123_X86_SOURCE_FILES
 	${CMAKE_SOURCE_DIR}/src/libmpg123/dct64_sse.S
 	${CMAKE_SOURCE_DIR}/src/libmpg123/dct64_sse_float.S
 	${CMAKE_SOURCE_DIR}/src/libmpg123/tabinit_mmx.S
-#	${CMAKE_SOURCE_DIR}/src/libmpg123/tabinit.c
 )
 
 SET(MPGLIB123_CFLAGS_FOR_AMD64 "-Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -ffast-math -O3")
@@ -262,13 +275,31 @@ SET(MPG123_AMD64_SOURCE_FILES
 	${CMAKE_SOURCE_DIR}/src/libmpg123/dct64_x86_64_float.S
 )
 
-
+SET(MPGLIB123_CFLAGS_FOR_ARM64 "-Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -ffast-math -O3")
+SET(MPGLIB123_DEFINITIONS_FOR_ARM64 "-DACCURATE_ROUNDING -DHAVE_STRERROR -DOPT_NEON64")
+SET(MPG123_ARM64_SOURCE_FILES
+	${CMAKE_SOURCE_DIR}/src/libmpg123/synth_real.c
+	${CMAKE_SOURCE_DIR}/src/libmpg123/synth_s32.c
+	${CMAKE_SOURCE_DIR}/src/libmpg123/dct36_neon64.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/dct64_neon64.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/dct64_neon64_float.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/synth_neon64.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/synth_neon64_accurate.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/synth_neon64_float.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/synth_neon64_s32.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/synth_stereo_neon64.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/synth_stereo_neon64_accurate.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/synth_stereo_neon64_float.S
+    ${CMAKE_SOURCE_DIR}/src/libmpg123/synth_stereo_neon64_s32.S
+)
 
 # TODO: Figure out how to set the architecture for other platforms
 SET(MPGLIB123_USE_ARMV5 0)
 SET(MPGLIB123_USE_ARMV7 0)
 SET(MPGLIB123_USE_X86 0)
 SET(MPGLIB123_USE_AMD64 0)
+SET(MPGLIB123_USE_ARM64 0)
+SET(MPGLIB123_USE_PURE_C_FALLBACK 0)
 
 MESSAGE("ANDROID ${ANDROID}")
 MESSAGE("ANDROID_ABI ${ANDROID_ABI}")
@@ -281,9 +312,14 @@ IF(ANDROID)
 		# TODO: have dedicated Neon option
 		SET(MPGLIB123_USE_ARMV7 1)
 	ELSEIF("${ANDROID_ABI}" STREQUAL "x86")
-		SET(MPGLIB123_USE_X86 1)
+		# Unfortunately, can't get x86 asm to work on Android.
+#		SET(MPGLIB123_USE_X86 1)
+		SET(MPGLIB123_USE_PURE_C_FALLBACK 1)
+
 	ELSEIF("${ANDROID_ABI}" STREQUAL "x86_64")
 		SET(MPGLIB123_USE_AMD64 1)
+	ELSEIF("${ANDROID_ABI}" STREQUAL "arm64-v8a")
+		SET(MPGLIB123_USE_ARM64 1)
 	ELSE()
 		MESSAGE(FATAL_ERROR "Unknown architecture")
 	ENDIF()
@@ -301,6 +337,7 @@ IF(MPGLIB123_USE_ARMV5)
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPGLIB123_CFLAGS_FOR_ARMV5}")
 #	ADD_DEFINITIONS(${MPGLIB123_DEFINITIONS_FOR_ARMV5})
 
+
 ELSEIF(MPGLIB123_USE_ARMV7)
 	LIST(APPEND MPG123LIB_SOURCE_FILES ${MPG123_ARMV7_SOURCE_FILES})
 #	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPGLIB123_CFLAGS_FOR_ARMV7}")
@@ -313,6 +350,32 @@ ELSEIF(MPGLIB123_USE_X86)
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPGLIB123_CFLAGS_FOR_X86}")
 	ADD_DEFINITIONS(${MPGLIB123_DEFINITIONS_FOR_X86})
 
+	# This doesn't seem to work.
+	# link_directories(/Library/Frameworks/Android/android-sdk/ndk-bundle/platforms/android-16/arch-x86/usr/lib)
+
+	# This works around 2 bugs:
+	# Bug 1: We are getting a linker warning. Android treats it as fatal, but we want to proceed.
+	# Bug 2: For x86, the NDK is failing to find crtbegin_so.o crtend_so.o libm.so libdl.so libc.so
+	# According to the net copying the files (or symlinking) into the source directory is the workaround.
+	# But I found that I need to put crtbegin_so.o crtend_so.o in the source directory,
+	# but the .so files didn't work. So putting an explicit path to the link directory seemed to work.
+	# Using link_directories() didn't work.
+	# The "source" directory is tricky with Android/CMake's out-of-source-builds.
+	# For debug, I was in mpg123/Android/mpg123player/mpg123/.externalNativeBuild/cmake/debug/x86
+	# (which is above CMakeFiles/mpg123.dir/src/libmpg123 where the .o files are)
+	# So in mpg123/Android/mpg123player/mpg123/.externalNativeBuild/cmake/debug/x86,
+	# ln -s /Library/Frameworks/Android/android-sdk/ndk-bundle/platforms/android-16/arch-x86/usr/lib/crtbegin_so.o crtbegin_so.o
+	# ln -s /Library/Frameworks/Android/android-sdk/ndk-bundle/platforms/android-16/arch-x86/usr/lib/crtend_so.o crtend_so.o
+	# For Release:
+	# cd to mpg123/Android/mpg123player/mpg123/.externalNativeBuild/cmake/release/x86,
+	# ln -s /Library/Frameworks/Android/android-sdk/ndk-bundle/platforms/android-16/arch-x86/usr/lib/crtbegin_so.o crtbegin_so.o
+	# ln -s /Library/Frameworks/Android/android-sdk/ndk-bundle/platforms/android-16/arch-x86/usr/lib/crtend_so.o crtend_so.o
+	#
+	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-fatal-warnings -L/Library/Frameworks/Android/android-sdk/ndk-bundle/platforms/android-16/arch-x86/usr/lib")
+
+
+
+
 MESSAGE("CMAKE_C_FLAGS are ${CMAKE_C_FLAGS}")
 
 ELSEIF(MPGLIB123_USE_AMD64)
@@ -320,6 +383,18 @@ ELSEIF(MPGLIB123_USE_AMD64)
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPGLIB123_CFLAGS_FOR_AMD64}")
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPGLIB123_CFLAGS_FOR_AMD64}")
 	ADD_DEFINITIONS(${MPGLIB123_DEFINITIONS_FOR_AMD64})
+
+ELSEIF(MPGLIB123_USE_ARM64)
+	LIST(APPEND MPG123LIB_SOURCE_FILES ${MPG123_ARM64_SOURCE_FILES})
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPGLIB123_CFLAGS_FOR_ARM64}")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPGLIB123_CFLAGS_FOR_ARM64}")
+	ADD_DEFINITIONS(${MPGLIB123_DEFINITIONS_FOR_ARM64})
+
+ELSEIF(MPGLIB123_USE_PURE_C_FALLBACK)
+	LIST(APPEND MPG123LIB_SOURCE_FILES ${MPG123_PURE_C_FALLBACK_SOURCE_FILES})
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPGLIB123_CFLAGS_FOR_PURE_C_FALLBACK}")
+	ADD_DEFINITIONS(${MPGLIB123_DEFINITIONS_FOR_PURE_C_FALLBACK})
+
 
 ELSE()
 

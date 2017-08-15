@@ -11,6 +11,19 @@
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
+
+#define HAVE_DIRENT_H 1
+#define OPT_NEON64 1
+//#define NO_REAL 1
+
+#define ACCURATE_ROUNDING 1
+#define REAL_IS_FLOAT 1
+//#define NO_32BIT
+#define HAVE_STRERROR 1
+#define ASMALIGN_BYTE 1
+//#define ASMALIGN_EXP 1
+
+
 /* Define if .balign is present. */
 #define ASMALIGN_BALIGN 1
 

@@ -3,7 +3,7 @@
 
 /* Define if your architecture wants/needs/can use attribute_align_arg and
    alignment checks. It is for 32bit x86... */
-/* #undef ABI_ALIGN_FUN */
+#define ABI_ALIGN_FUN 1
 
 /* Define to use proper rounding. */
 /* #undef ACCURATE_ROUNDING */
@@ -21,10 +21,8 @@
 /* #undef ASMALIGN_EXP */
 
 #define OPT_SSE 1
-#define OPT_X86 1
 #define PIC 1
 #define __ELF__ 1
-#warning "Seting ELF and PIC"
 
 /* Define if debugging is enabled. */
 /* #undef DEBUG */
@@ -268,7 +266,7 @@
 
 /* Define this to the size of long type in bits, used for LFS small/native
    alias functions. */
-#define LFS_ALIAS_BITS 64
+#define LFS_ALIAS_BITS 32
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
